@@ -40,7 +40,7 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 	} else {
 		bencodedSlice := strings.Split(bencodedString, "")
 		if bencodedSlice[0] == "l" {
-			if bencodedSlice[1] == "e" {
+			if len(bencodedSlice) == 2 && bencodedSlice[1] == "e" {
 				return []interface{}{}, nil
 			}
 			idx, err := strconv.Atoi(bencodedSlice[1])
