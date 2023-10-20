@@ -5,20 +5,30 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"unicode"
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
-type DecodedData struct {
-	S string
-	I int
+func trimIdentifiers(bencodedString string) string {
+	l := len(bencodedString)
+	i := 0
+	for l > 1 {
+		if bencodedString[i] == 'l' && bencodedString[l-1] == 'e' {
+			i++
+			l--
+			continue
+		}
+		break
+	}
+	// fmt.Println(bencodedString[i:l])
+	return bencodedString[i:l]
 }
 
-// Example:
-// - 5:hello -> hello
-// - 10:hello12345 -> hello12345
 func decodeBencode(bencodedString string) (interface{}, error) {
+	bencodedString = trimIdentifiers(bencodedString)
+	if len(bencodedString) == 0 {
+		return []interface{}{}, nil
+	}
 	if unicode.IsDigit(rune(bencodedString[0])) {
 		var firstColonIndex int
 
@@ -38,29 +48,17 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 
 		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
 	} else {
-		bencodedSlice := strings.Split(bencodedString, "")
-		if bencodedSlice[0] == "l" {
-			if len(bencodedSlice) == 2 && bencodedSlice[1] == "e" {
-				return []interface{}{}, nil
+		var strIdx int
+		for idx, ch := range bencodedString {
+			if ch == ':' {
+				strIdx = idx
 			}
-			idx, err := strconv.Atoi(bencodedSlice[1])
-			idx += 3
-			if err != nil {
-				return nil, err
-			}
-			i, _ := strconv.Atoi(strings.Join(bencodedSlice[idx+1:len(bencodedSlice)-2], ""))
-			s := strings.Join(bencodedSlice[3:idx], "")
-			return []interface{}{s, i}, nil
 		}
-		var result string
-		for _, v := range bencodedSlice[1 : len(bencodedSlice)-1] {
-			result += v
-		}
-		i, err := strconv.Atoi(result)
-		if err != nil {
-			return nil, err
-		}
-		return i, nil
+		i, _ := strconv.Atoi(bencodedString[1 : strIdx-2])
+		return []interface{}{
+			bencodedString[strIdx+1:],
+			i,
+		}, nil
 	}
 }
 
