@@ -41,7 +41,7 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 		bencodedSlice := strings.Split(bencodedString, "")
 		if bencodedSlice[0] == "l" {
 			if bencodedSlice[1] == "e" {
-				return nil, nil
+				return []interface{}{}, nil
 			}
 			idx, err := strconv.Atoi(bencodedSlice[1])
 			idx += 3
