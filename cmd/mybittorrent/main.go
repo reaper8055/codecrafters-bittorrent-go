@@ -10,6 +10,11 @@ import (
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
+type DecodedData struct {
+	S string
+	I int
+}
+
 // Example:
 // - 5:hello -> hello
 // - 10:hello12345 -> hello12345
@@ -34,6 +39,16 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
 	} else {
 		bencodedSlice := strings.Split(bencodedString, "")
+		if bencodedSlice[0] == "l" {
+			idx, err := strconv.Atoi(bencodedSlice[1])
+			idx += 3
+			if err != nil {
+				return nil, err
+			}
+			i, _ := strconv.Atoi(strings.Join(bencodedSlice[idx+1:len(bencodedSlice)-2], ""))
+			s := strings.Join(bencodedSlice[3:idx], "")
+			return []interface{}{s, i}, nil
+		}
 		var result string
 		for _, v := range bencodedSlice[1 : len(bencodedSlice)-1] {
 			result += v
@@ -42,7 +57,6 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		return i, nil
 	}
 }
