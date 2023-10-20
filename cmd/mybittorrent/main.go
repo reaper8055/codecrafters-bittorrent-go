@@ -57,7 +57,7 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 				}, nil
 			}
 		}
-		i, _ := strconv.Atoi(bencodedString[1:])
+		i, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
 		return i, nil
 	}
 }
