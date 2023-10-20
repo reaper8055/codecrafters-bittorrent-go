@@ -48,22 +48,17 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 
 		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
 	} else {
-		var strIdx int
 		for idx, ch := range bencodedString {
 			if ch == ':' {
-				strIdx = idx
+				i, _ := strconv.Atoi(bencodedString[1 : idx-2])
+				return []interface{}{
+					bencodedString[idx+1:],
+					i,
+				}, nil
 			}
 		}
-		var i int
-		if strIdx == 0 {
-			i, _ = strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
-		} else {
-			i, _ = strconv.Atoi(bencodedString[1 : strIdx-2])
-		}
-		return []interface{}{
-			bencodedString[strIdx+1:],
-			i,
-		}, nil
+		i, _ := strconv.Atoi(bencodedString[1:])
+		return i, nil
 	}
 }
 
