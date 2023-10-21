@@ -23,7 +23,7 @@ func trimFromList(bencodedString string) string {
 		}
 		break
 	}
-	// fmt.Println("26: ", bencodedString[i:l])
+	fmt.Println("26: ", bencodedString[i:l])
 	return bencodedString[i:l]
 }
 
@@ -47,10 +47,10 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 				}
 			}
 			strValue := bencodedString[strIdx+1:]
-			intValue, _ := strconv.Atoi(bencodedString[:strIdx-2])
+			intValue, _ := strconv.Atoi(bencodedString[1 : strIdx-2])
 			return []interface{}{
-				strValue,
 				intValue,
+				strValue,
 			}, nil
 		}
 		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
