@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
-func trimIdentifiers(bencodedString string) string {
+func trimFromList(bencodedString string) string {
 	l := len(bencodedString)
 	i := 0
 	for l > 1 {
@@ -24,43 +27,61 @@ func trimIdentifiers(bencodedString string) string {
 	return bencodedString[i:l]
 }
 
+func printType(v interface{}) {
+	fmt.Println(reflect.TypeOf(v))
+}
+
 func decodeBencode(bencodedString string) (interface{}, error) {
-	bencodedString = trimIdentifiers(bencodedString)
+	bencodedString = trimFromList(bencodedString)
 	if len(bencodedString) == 0 {
 		return []interface{}{}, nil
 	}
-	if unicode.IsDigit(rune(bencodedString[0])) {
-		var firstColonIndex int
 
-		for i := 0; i < len(bencodedString); i++ {
-			if bencodedString[i] == ':' {
-				firstColonIndex = i
-				break
+	if bencodedString[0] == 'i' {
+		if strings.Contains(bencodedString, ":") {
+			var strIdx int
+			for idx := 0; idx < len(bencodedString); idx++ {
+				if bencodedString[idx] == ':' {
+					strIdx = idx
+					break
+				}
 			}
+			strValue := bencodedString[strIdx+1:]
+			intValue, _ := strconv.Atoi(bencodedString[:strIdx-2])
+			return []interface{}{
+				strValue,
+				intValue,
+			}, nil
 		}
-
-		lengthStr := bencodedString[:firstColonIndex]
-
-		length, err := strconv.Atoi(lengthStr)
-		if err != nil {
-			return "", err
-		}
-
-		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
-	} else {
-		for idx, ch := range bencodedString {
-			if ch == ':' {
-				i, _ := strconv.Atoi(bencodedString[1 : idx-2])
-				return []interface{}{
-					bencodedString[idx+1:],
-					i,
-				}, nil
+		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
+		return intValue, nil
+	} else if unicode.IsDigit(rune(bencodedString[0])) {
+		pattern := `i[0-9\-]e`
+		if contains, _ := regexp.MatchString(pattern, bencodedString); contains {
+			var strIdx, lengthOfStrValue int
+			for idx := 0; idx < len(bencodedString); idx++ {
+				if bencodedString[idx] == ':' {
+					strIdx = idx
+					lengthOfStrValue, _ = strconv.Atoi(string(bencodedString[idx-1]))
+					break
+				}
 			}
+			strValue := bencodedString[strIdx+1 : lengthOfStrValue+strIdx+1]
+			intValue, _ := strconv.Atoi(bencodedString[lengthOfStrValue+strIdx+1 : len(bencodedString)-1])
+			return []interface{}{
+				strValue,
+				intValue,
+			}, nil
 		}
-		i, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
-		return i, nil
-
 	}
+	var strIdx int
+	for idx := 0; idx < len(bencodedString); idx++ {
+		if bencodedString[idx] == ':' {
+			strIdx = idx
+			break
+		}
+	}
+	return bencodedString[strIdx+1:], nil
 }
 
 func main() {
