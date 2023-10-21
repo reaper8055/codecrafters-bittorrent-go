@@ -23,7 +23,7 @@ func trimFromList(bencodedString string) string {
 		}
 		break
 	}
-	// fmt.Println(bencodedString[i:l])
+	fmt.Println("26: ", bencodedString[i:l])
 	return bencodedString[i:l]
 }
 
@@ -56,18 +56,25 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
 		return intValue, nil
 	} else if unicode.IsDigit(rune(bencodedString[0])) {
-		pattern := `i[0-9\-]e`
+		pattern := `i[0-9\-]+e`
 		if contains, _ := regexp.MatchString(pattern, bencodedString); contains {
 			var strIdx, lengthOfStrValue int
+			var err error
 			for idx := 0; idx < len(bencodedString); idx++ {
 				if bencodedString[idx] == ':' {
 					strIdx = idx
-					lengthOfStrValue, _ = strconv.Atoi(string(bencodedString[idx-1]))
+					lengthOfStrValue, err = strconv.Atoi(bencodedString[:strIdx])
+					if err != nil {
+						return nil, err
+					}
 					break
 				}
 			}
 			strValue := bencodedString[strIdx+1 : lengthOfStrValue+strIdx+1]
-			intValue, _ := strconv.Atoi(bencodedString[lengthOfStrValue+strIdx+1 : len(bencodedString)-1])
+			intValue, err := strconv.Atoi(bencodedString[lengthOfStrValue+strIdx+1+1 : len(bencodedString)-1])
+			if err != nil {
+				return nil, err
+			}
 			return []interface{}{
 				strValue,
 				intValue,
