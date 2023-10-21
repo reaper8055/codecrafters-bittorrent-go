@@ -31,7 +31,12 @@ func printType(v interface{}) {
 	fmt.Println(reflect.TypeOf(v))
 }
 
+func formatResult(s interface{}) interface{} {
+	return []interface{}{s}
+}
+
 func decodeBencode(bencodedString string) (interface{}, error) {
+	nest := len(bencodedString) - len(trimFromList(bencodedString))
 	bencodedString = trimFromList(bencodedString)
 	if len(bencodedString) == 0 {
 		return []interface{}{}, nil
@@ -48,13 +53,23 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 			}
 			strValue := bencodedString[strIdx+1:]
 			intValue, _ := strconv.Atoi(bencodedString[1 : strIdx-2])
-			return []interface{}{
-				intValue,
-				strValue,
-			}, nil
+			var result interface{}
+			for i := 0; i < nest; i++ {
+				result = formatResult([]interface{}{
+					intValue,
+					strValue,
+				})
+			}
+			return result, nil
 		}
 		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
-		return intValue, nil
+		var result interface{}
+		for i := 0; i < nest; i++ {
+			result = formatResult([]interface{}{
+				intValue,
+			})
+		}
+		return result, nil
 	} else if unicode.IsDigit(rune(bencodedString[0])) {
 		pattern := `i[0-9\-]+e`
 		if contains, _ := regexp.MatchString(pattern, bencodedString); contains {
@@ -75,10 +90,14 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			return []interface{}{
-				strValue,
-				intValue,
-			}, nil
+			var result interface{}
+			for i := 0; i < nest; i++ {
+				result = formatResult([]interface{}{
+					strValue,
+					intValue,
+				})
+			}
+			return result, nil
 		}
 	}
 	var strIdx int
