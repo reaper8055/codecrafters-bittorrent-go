@@ -63,13 +63,7 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 			return result, nil
 		}
 		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
-		var result interface{}
-		for i := 0; i < nest; i++ {
-			result = formatResult([]interface{}{
-				intValue,
-			})
-		}
-		return result, nil
+		return intValue, nil
 	} else if unicode.IsDigit(rune(bencodedString[0])) {
 		pattern := `i[0-9\-]+e`
 		if contains, _ := regexp.MatchString(pattern, bencodedString); contains {
