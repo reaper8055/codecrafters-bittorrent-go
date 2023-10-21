@@ -23,7 +23,7 @@ func trimFromList(bencodedString string) string {
 		}
 		break
 	}
-	fmt.Println("26: ", bencodedString[i:l])
+	// fmt.Println("26: ", bencodedString[i:l])
 	return bencodedString[i:l]
 }
 
