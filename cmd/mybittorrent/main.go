@@ -31,12 +31,7 @@ func printType(v interface{}) {
 	fmt.Println(reflect.TypeOf(v))
 }
 
-func formatResult(s interface{}) interface{} {
-	return []interface{}{s}
-}
-
 func decodeBencode(bencodedString string) (interface{}, error) {
-	nest := len(bencodedString) - len(trimFromList(bencodedString))
 	bencodedString = trimFromList(bencodedString)
 	if len(bencodedString) == 0 {
 		return []interface{}{}, nil
@@ -53,14 +48,10 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 			}
 			strValue := bencodedString[strIdx+1:]
 			intValue, _ := strconv.Atoi(bencodedString[1 : strIdx-2])
-			var result interface{}
-			for i := 0; i < nest; i++ {
-				result = formatResult([]interface{}{
-					intValue,
-					strValue,
-				})
-			}
-			return result, nil
+			return []interface{}{
+				intValue,
+				strValue,
+			}, nil
 		}
 		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
 		return intValue, nil
@@ -74,7 +65,7 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 					strIdx = idx
 					lengthOfStrValue, err = strconv.Atoi(bencodedString[:strIdx])
 					if err != nil {
-						return nil, err
+						return []interface{}{}, err
 					}
 					break
 				}
@@ -82,16 +73,12 @@ func decodeBencode(bencodedString string) (interface{}, error) {
 			strValue := bencodedString[strIdx+1 : lengthOfStrValue+strIdx+1]
 			intValue, err := strconv.Atoi(bencodedString[lengthOfStrValue+strIdx+1+1 : len(bencodedString)-1])
 			if err != nil {
-				return nil, err
+				return []interface{}{}, err
 			}
-			var result interface{}
-			for i := 0; i < nest; i++ {
-				result = formatResult([]interface{}{
-					strValue,
-					intValue,
-				})
-			}
-			return result, nil
+			return []interface{}{
+				strValue,
+				intValue,
+			}, nil
 		}
 	}
 	var strIdx int
