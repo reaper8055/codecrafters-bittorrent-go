@@ -23,3 +23,13 @@ func Test_decodeBencode(t *testing.T) {
 		assert.Equal(t, gotData, v)
 	}
 }
+
+func Test_trimDelimiters(t *testing.T) {
+	testData := map[string]interface{}{
+		"9:pineapple":      "pineapple",
+		"i18264343e":       18264343,
+		"lli983e5:grapeee": []interface{}{983, "grape"},
+		"l6:orangei463ee":  []interface{}{"orange", 463},
+		"le":               []interface{}{},
+	}
+}

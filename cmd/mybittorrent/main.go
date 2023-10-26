@@ -2,17 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
-	"regexp"
 	"strconv"
-	"strings"
-	"unicode"
 	// bencode "github.com/jackpal/bencode-go" // Available if you need it!
 )
 
-func trimFromList(bencodedString string) string {
+func trimListDelimiters(bencodedString string) (string, int) {
 	l := len(bencodedString)
 	i := 0
 	for l > 1 {
@@ -24,71 +22,100 @@ func trimFromList(bencodedString string) string {
 		break
 	}
 	// fmt.Println("26: ", bencodedString[i:l])
-	return bencodedString[i:l]
+	return bencodedString[i:l], i - 1
+}
+
+func format(s interface{}, level int) interface{} {
+	if level <= 0 {
+		return s
+	}
+	result := []interface{}{format(s, level-1)}
+	return result
 }
 
 func printType(v interface{}) {
 	fmt.Println(reflect.TypeOf(v))
 }
 
-func decodeBencode(bencodedString string) (interface{}, error) {
-	bencodedString = trimFromList(bencodedString)
-	if len(bencodedString) == 0 {
-		return []interface{}{}, nil
+func decodeString(bencodedString string) (string, error) {
+	l := len(bencodedString)
+	colonIdx := 0
+	for idx, ch := range bencodedString {
+		if ch != ':' {
+			continue
+		}
+		colonIdx = idx
+		break
 	}
+	return bencodedString[colonIdx+1 : l], nil
+}
 
-	if bencodedString[0] == 'i' {
-		if strings.Contains(bencodedString, ":") {
-			var strIdx int
-			for idx := 0; idx < len(bencodedString); idx++ {
-				if bencodedString[idx] == ':' {
-					strIdx = idx
-					break
-				}
-			}
-			strValue := bencodedString[strIdx+1:]
-			intValue, _ := strconv.Atoi(bencodedString[1 : strIdx-2])
-			return []interface{}{
-				intValue,
-				strValue,
-			}, nil
-		}
-		intValue, _ := strconv.Atoi(bencodedString[1 : len(bencodedString)-1])
-		return intValue, nil
-	} else if unicode.IsDigit(rune(bencodedString[0])) {
-		pattern := `i[0-9\-]+e`
-		if contains, _ := regexp.MatchString(pattern, bencodedString); contains {
-			var strIdx, lengthOfStrValue int
-			var err error
-			for idx := 0; idx < len(bencodedString); idx++ {
-				if bencodedString[idx] == ':' {
-					strIdx = idx
-					lengthOfStrValue, err = strconv.Atoi(bencodedString[:strIdx])
-					if err != nil {
-						return []interface{}{}, err
-					}
-					break
-				}
-			}
-			strValue := bencodedString[strIdx+1 : lengthOfStrValue+strIdx+1]
-			intValue, err := strconv.Atoi(bencodedString[lengthOfStrValue+strIdx+1+1 : len(bencodedString)-1])
-			if err != nil {
-				return []interface{}{}, err
-			}
-			return []interface{}{
-				strValue,
-				intValue,
-			}, nil
-		}
+func decodeInteger(bencodedString string) (int, error) {
+	l := len(bencodedString)
+	decodedInteger, err := strconv.Atoi(bencodedString[1 : l-1])
+	if err != nil {
+		return 0, err
 	}
-	var strIdx int
-	for idx := 0; idx < len(bencodedString); idx++ {
-		if bencodedString[idx] == ':' {
-			strIdx = idx
-			break
+	return decodedInteger, nil
+}
+
+func getColonIndex(bencodedString string) (int, error) {
+	var colonIdx int
+	for idx, char := range bencodedString {
+		if char != ':' {
+			continue
 		}
+		colonIdx = idx
+		return colonIdx, nil
 	}
-	return bencodedString[strIdx+1:], nil
+	return 0, errors.New("colon not found in the given string")
+}
+
+func decodeList(bencodedString string) (interface{}, error) {
+	l := len(bencodedString)
+	var colonIdx, decodedInteger int
+	var decodedString string
+	firstChar := bencodedString[0]
+	if firstChar == 'i' {
+		colonIdx, _ = getColonIndex(bencodedString)
+		decodedString, _ = decodeString(bencodedString[colonIdx-1 : l])
+		decodedInteger, _ = decodeInteger(bencodedString[:colonIdx-1])
+		return []interface{}{
+			decodedInteger,
+			decodedString,
+		}, nil
+	}
+	colonIdx, _ = getColonIndex(bencodedString)
+	lengthOfString, _ := strconv.Atoi(bencodedString[:colonIdx])
+	decodedString, _ = decodeString(bencodedString[:lengthOfString+colonIdx+1])
+	decodedInteger, _ = decodeInteger(bencodedString[lengthOfString+colonIdx+1:])
+	return []interface{}{
+		decodedString,
+		decodedInteger,
+	}, nil
+}
+
+func decodeBencode(bencodedString string) (interface{}, error) {
+	l := len(bencodedString)
+	var level int
+
+	firstChar := bencodedString[0]
+	lastChar := bencodedString[l-1]
+
+	if firstChar == 'l' && lastChar == 'e' {
+		bencodedString, level = trimListDelimiters(bencodedString)
+		if len(bencodedString) == 0 {
+			return []interface{}{}, nil
+		}
+		result, _ := decodeList(bencodedString)
+		r := format(result, level)
+		return r, nil
+	} else if firstChar == 'i' && lastChar == 'e' {
+		result, _ := decodeInteger(bencodedString)
+		return result, nil
+	}
+	result, _ := decodeString(bencodedString)
+	return result, nil
 }
 
 func main() {
