@@ -1,3 +1,5 @@
+// bencode is my own implementation of decoding bencode
+// inspired from github.com/jackpal/bencode-go
 package bencode
 
 import (
