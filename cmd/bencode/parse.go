@@ -59,8 +59,7 @@ func Unmarshall(rd *bufio.Reader) (interface{}, error) {
 		}
 		return string(b), nil
 	case 'd':
-		rd.UnreadByte()
-		dictionary := make(map[string]interface{})
+		dictionary := map[string]interface{}{}
 		for {
 			c, err2 := rd.ReadByte()
 			if err2 == nil {
