@@ -5,6 +5,7 @@ package bencode
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"strconv"
 )
@@ -57,6 +58,35 @@ func Unmarshall(rd *bufio.Reader) (interface{}, error) {
 			return nil, err
 		}
 		return string(b), nil
+	case 'd':
+		rd.UnreadByte()
+		dictionary := make(map[string]interface{})
+		for {
+			c, err2 := rd.ReadByte()
+			if err2 == nil {
+				if c == 'e' {
+					return dictionary, nil
+				} else {
+					rd.UnreadByte()
+				}
+			}
+			value, err := Unmarshall(rd)
+			if err != nil {
+				return nil, err
+			}
+
+			key, ok := value.(string)
+			if !ok {
+				return nil, errors.New("bencode: non-string dictionary key")
+			}
+
+			value, err = Unmarshall(rd)
+			if err != nil {
+				return nil, err
+			}
+
+			dictionary[key] = value
+		}
 	}
 
 	return nil, nil
